@@ -12,6 +12,9 @@ def _sendFile(client, path):
     if not os.path.isfile(path):
         print("File " + path + " is not exist")
         return
+
+    client.send(bytes(str(os.stat(path).st_size), "utf-8"))
+
     sendFile = open(path, 'rb')
     data = sendFile.read(buffsize)
     while data != b"":
@@ -28,9 +31,9 @@ elif len(sys.argv) == 2:
     host = "localhost"
     port = int(sys.argv[1])
 else:
-    print("Usage: main.py [hostname] <port>")
+    print("Usage: server..py [hostname] <port>")
     sys.exit()
-    
+
 try:
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) #option for force socket reusing
@@ -45,5 +48,5 @@ server.listen(5)
 while True:
     client, address = server.accept()
     data = client.recv(buffsize)
-    _sendFile(client, "./files/" + data.decode("utf-8"))
+    _sendFile(client, data.decode("utf-8"))
     client.close()

@@ -4,8 +4,9 @@ import socket, signal, sys, os
 buffsize = 128
 
 def ensure_dir(path):
-    if not os.path.exists("recieved"):
-        os.makedirs("recieved", 0o777)
+    d = os.path.dirname(path)
+    if not os.path.exists(d):
+        os.makedirs(d, 0o777)
 
 def sigterm(signo, sigobj):
     print("SIGTERM: {0} Exitting...".format(signo))
@@ -15,12 +16,19 @@ def _recieveFile(server, path):
     global buffsize
 
     ensure_dir(path)    #Create directory
+    sendlen = server.recv(4).decode("utf-8");
 
-    recieveFile = open("./recieved/" + path, 'wb')
+    recieveFile = open(path, 'wb')
+
     data = server.recv(buffsize)
     while data != b"":
         recieveFile.write(data)
         data = server.recv(buffsize)
+
+    recieveFile.close()
+
+    if sendlen != os.stat(path).st_size:
+        print("Error when receiving file data.")
 
 signal.signal(signal.SIGTERM, sigterm)
 signal.signal(signal.SIGINT, sigterm)
@@ -34,9 +42,9 @@ elif len(sys.argv) == 3:
     port = int(sys.argv[1])
     path = sys.argv[2]
 else:
-    print("Usage: main.py [hostname] <port> <path>")
+    print("Usage: clientn.py [hostname] <port> <filepath>")
     sys.exit()
-    
+
 try:
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.connect((host,port))
@@ -47,5 +55,5 @@ except socket.error as msg:
 
 server.send(bytes(path, "utf-8"))
 
-_recieveFile(server, path)
+_recieveFile(server, "./recieved/" + os.path.basename(path))
 server.close()
