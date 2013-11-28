@@ -17,7 +17,7 @@ def sigterm(signo, sigobj):
 def sigurg(signo, sigobj):
     try:
         data = server.recv(2, socket.MSG_OOB)
-        time.sleep(0.002)
+        time.sleep(0.001)
         if data == b"Q":
             print("Recieved ", recvLen, "/", sendLen)
     except socket.error:
@@ -30,14 +30,14 @@ def _recieveFile(server, path):
     global sendLen
     global recvLen
     sendLen = int(server.recv(10).decode("utf-8"));
-    time.sleep(0.002)
+    time.sleep(0.001)
 
     recieveFile = open(path, 'wb')
 
     data = "start"
     while data != b"":
         data = server.recv(buffsize)
-        time.sleep(0.002)
+        time.sleep(0.001)
         if data != b"!":
             recieveFile.write(data)
             recvLen += len(data)
