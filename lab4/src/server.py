@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import socket, signal, sys, os
+import socket, signal, sys, os, time
 
 buffsize = 128
 
@@ -14,6 +14,7 @@ def _sendFile(client, path):
         return
 
     client.send(bytes(str(os.stat(path).st_size), "utf-8"))
+    time.sleep(0.002)
 
     sendFile = open(path, 'rb')
     sentData = 0
@@ -23,10 +24,12 @@ def _sendFile(client, path):
         client.send(data)
         sentData += len(data)
         data = sendFile.read(buffsize)
+        time.sleep(0.002)
         sendOob += 1
-        if sendOob % 8 == 0:
+        if sendOob % 16 == 0:
             sendOob = 0
-            client.send(b'urgent', socket.MSG_OOB)
+            client.send(b"!Q", socket.MSG_OOB)
+            time.sleep(0.002)
 
 signal.signal(signal.SIGTERM, sigterm)
 signal.signal(signal.SIGINT, sigterm)

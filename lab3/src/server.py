@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import socket, signal, sys, os
+import socket, signal, sys, os, time
 
 buffsize = 128
 
@@ -20,6 +20,7 @@ def _sendFile(client, path):
     while data != b"":
         client.send(data)
         data = sendFile.read(buffsize)
+        time.sleep(0.002)
 
 signal.signal(signal.SIGTERM, sigterm)
 signal.signal(signal.SIGINT, sigterm)

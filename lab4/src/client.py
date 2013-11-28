@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
-import socket, signal, sys, os
+import socket, signal, sys, os, time, fcntl
 
 buffsize = 128
+recvLen = 0
+sendLen = 0
 
 def ensure_dir(path):
     d = os.path.dirname(path)
@@ -12,35 +14,42 @@ def sigterm(signo, sigobj):
     print("SIGTERM: {0} Exitting...".format(signo))
     sys.exit()
 
+def sigurg(signo, sigobj):
+    try:
+        data = server.recv(2, socket.MSG_OOB)
+        time.sleep(0.002)
+        if data == b"Q":
+            print("Recieved ", recvLen, "/", sendLen)
+    except socket.error:
+        print("Error: ", socket.error)
+
 def _recieveFile(server, path):
     global buffsize
 
     ensure_dir(path)    #Create directory
-    sendlen = server.recv(4).decode("utf-8");
+    global sendLen
+    global recvLen
+    sendLen = int(server.recv(10).decode("utf-8"));
+    time.sleep(0.002)
 
     recieveFile = open(path, 'wb')
 
-    recvLen = 0
     data = "start"
     while data != b"":
-        try:
-            data = server.recv(buffsize, socket.MSG_OOB)
-        except socket.error:
-            data = None
-        if data:
-            print("Recieved ", recvLen, "/", sendlen)
-        else:
-            data = server.recv(buffsize)
+        data = server.recv(buffsize)
+        time.sleep(0.002)
+        if data != b"!":
             recieveFile.write(data)
             recvLen += len(data)
 
     recieveFile.close()
 
-    if sendlen != recvLen:
-        print("Error when receiving file data.")
+    if sendLen != os.stat(path).st_size:
+        print("Error when receiving file data. ", os.stat(path).st_size, " from ", sendLen)
 
 signal.signal(signal.SIGTERM, sigterm)
 signal.signal(signal.SIGINT, sigterm)
+signal.signal(signal.SIGURG, sigurg)
 
 if len(sys.argv) == 4:
     host = sys.argv[1]
@@ -63,6 +72,7 @@ except socket.error as msg:
     sys.exit()
 
 server.send(bytes(path, "utf-8"))
+fcntl.fcntl(server.fileno(), fcntl.F_SETOWN, os.getpid())
 
 _recieveFile(server, "./recieved/" + os.path.basename(path))
 server.close()

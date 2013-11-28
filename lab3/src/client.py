@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import socket, signal, sys, os
+import socket, signal, sys, os, time
 
 buffsize = 128
 
@@ -16,7 +16,8 @@ def _recieveFile(server, path):
     global buffsize
 
     ensure_dir(path)    #Create directory
-    sendlen = server.recv(4).decode("utf-8");
+    sendlen = int(server.recv(10).decode("utf-8"));
+    time.sleep(0.002)
 
     recieveFile = open(path, 'wb')
 
@@ -24,11 +25,12 @@ def _recieveFile(server, path):
     while data != b"":
         recieveFile.write(data)
         data = server.recv(buffsize)
+        time.sleep(0.002)
 
     recieveFile.close()
 
     if sendlen != os.stat(path).st_size:
-        print("Error when receiving file data.")
+        print("Error when receiving file data. ", os.stat(path).st_size, " from ", sendlen)
 
 signal.signal(signal.SIGTERM, sigterm)
 signal.signal(signal.SIGINT, sigterm)
