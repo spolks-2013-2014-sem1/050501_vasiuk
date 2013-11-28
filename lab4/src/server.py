@@ -16,6 +16,10 @@ def _sendFile(client, path):
     client.send(bytes(str(os.stat(path).st_size), "utf-8"))
     time.sleep(0.001)
 
+    count = int((os.stat(path).st_size)/buffsize/10)        #send message every 10% 
+    if count == 0:
+        count = 4
+    
     sendFile = open(path, 'rb')
     sentData = 0
     sendOob = 0
@@ -26,7 +30,7 @@ def _sendFile(client, path):
         data = sendFile.read(buffsize)
         time.sleep(0.001)
         sendOob += 1
-        if sendOob % 128 == 0:
+        if sendOob % count == 0:
             sendOob = 0
             client.send(b"!Q", socket.MSG_OOB)
             time.sleep(0.001)
